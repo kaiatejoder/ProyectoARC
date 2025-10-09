@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.*;
 import java.util.logging.*;
 /**
+ * ESTOS SE CONECTAN MEDIANTE TCP
  * Servidor concurrente que acepta múltiples clientes y maneja cada conexión en un hilo separado.
  * Esta clase espera indefinidamente hasta una nueva conexión.
  * Cuando esta ocurre,acepta el socket, muestra un mensaje en consola y crea un nuevo hilo (ServerHilo) para manejar la conexión
