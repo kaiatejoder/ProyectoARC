@@ -1,7 +1,11 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
-
+/**
+ *  Clase principal de parte del cliente que envía y recibe mensajes UDP
+ * @author Dani
+ * @version 1.0.0
+ **/
 public class PersonaUDP extends Thread {
     private int id; // Identificador del cliente
     private String serverHost; // Dirección del servidor

@@ -1,6 +1,11 @@
 import java.util.ArrayList;
 
-// Clase principal que lanza múltiples clientes
+/**
+ *  Clase principal que lanza múltiples clientes
+ * @author Dani
+ * @version 1.0.0
+ **/
+
 public class ClienteUDP {
     public static void main(String[] args) {
 

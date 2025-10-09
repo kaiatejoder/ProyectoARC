@@ -62,7 +62,11 @@ public class ServidorUDP {
         }
     }
     
-    // Método para procesar mensajes (personalizable)
+    /**
+     * Método para procesar mensajes (personalizable)
+     * @param mensaje Mensaje recibido
+     * @param idSession Identificador de la sesión (número de mensaje recibido)
+     * */
     private static String procesarMensaje(String mensaje, int idSession) {
         if (mensaje.equals("hola")) {
             System.out.println("Cliente " + idSession + " saluda");
