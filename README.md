@@ -12,6 +12,6 @@ Este repositorio se crea con la finalidad de poder realizar de manera colaborati
 
 ### SESIÓN 1 - 9/10/25
 
-- [ ] Que cree un grupo de vecinos
-- [ ] Crear conexión cliente-servidor con TCP
+- [ X ] Que cree un grupo de vecinos (EN PROCESO, SE PUEDE IMPLEMENTAR)
+- [ ] Errores en la conexión (Timeout de bind(??))
 - [ ] Conexión por UDP entre vecinos
