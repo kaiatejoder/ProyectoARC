@@ -1,4 +1,6 @@
-import java.io.IOException;
+package com.g13.proyectoarc.ProyectoUDP;
+
+import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -12,11 +14,12 @@ public class PersonaUDP extends Thread {
 
     // Información específica de este cliente (asignada por el servidor)
     private int idCliente, idGrupo;
-
     private DatagramSocket socket;
     
     // Cola segura para hilos para comunicar ACKs entre el hilo de escucha y el principal
-    private final ConcurrentLinkedQueue<String> acksRecibidos = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<Message> acksRecibidos = new ConcurrentLinkedQueue<>();
+    
+    private volatile boolean grupoHaTerminado = false;
 
     public PersonaUDP(String ip, int puerto, int v, int s) {
         this.ipServidor = ip;
@@ -49,12 +52,18 @@ public class PersonaUDP extends Thread {
                 acksRecibidos.clear();
 
                 // Genera un mensaje con coordenadas
-                String coordenadas = "COORDS;" + idCliente + ";" + ThreadLocalRandom.current().nextInt(0, 101);
-                byte[] datosEnvio = coordenadas.getBytes();
-                DatagramPacket paqueteEnvio = new DatagramPacket(datosEnvio, datosEnvio.length, direccionServidor, puertoServidor);
+                String coordsStr = "(" + ThreadLocalRandom.current().nextInt(0, 101) + ")"; // Solo como ejemplo
+                Message msgCoords = new Message(
+                    Message.messageType.COMPARTIR_COORDENADAS,
+                    idCliente,
+                    coordsStr,
+                    (i + 1) // Iteración actual
+                );
 
-                long tiempoInicio = System.nanoTime(); // Iniciar temporizador
-                socket.send(paqueteEnvio); // Envía mensaje al servidor
+                byte[] datosEnvio = serializarMensaje(msgCoords);
+                DatagramPacket paqueteEnvio = new DatagramPacket(datosEnvio, datosEnvio.length, direccionServidor, puertoServidor);
+                long tiempoInicio = System.nanoTime();
+                socket.send(paqueteEnvio);
 
                 // Espera a recibir todos los reconocimientos de los vecinos (V-1)
                 esperarAcks();
@@ -69,8 +78,27 @@ public class PersonaUDP extends Thread {
             double tiempoPromedio = tiemposDeRespuesta.stream().mapToLong(val -> val).average().orElse(0.0);
             System.out.printf("[Cliente %d] Simulación terminada. Tiempo medio: %.4f ms\n", idCliente, tiempoPromedio);
 
-            String mensajeFinalizado = "DONE;" + tiempoPromedio;
-            socket.send(new DatagramPacket(mensajeFinalizado.getBytes(), mensajeFinalizado.length(), direccionServidor, puertoServidor));
+            Message msgFinalizado = new Message(
+                Message.messageType.TIEMPOS_SIMULACION,
+                idCliente,
+                String.valueOf(tiempoPromedio),
+                S_iteraciones
+            );
+
+            byte[] datosFinales = serializarMensaje(msgFinalizado);
+            socket.send(new DatagramPacket(datosFinales, datosFinales.length, direccionServidor, puertoServidor));
+            
+            System.out.println("[Cliente " + idCliente + "] Esperando a que los vecinos del grupo terminen...");
+            while (!grupoHaTerminado) {
+                try {
+                    Thread.sleep(250); // Esperar pasivamente
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+            
+            System.out.println("[Cliente " + idCliente + "] Grupo terminado. Desconectando.");
             
             // Interrumpimos el hilo de escucha ya que hemos terminado
             hiloEscucha.interrupt(); 
@@ -78,7 +106,7 @@ public class PersonaUDP extends Thread {
 
         } catch (SocketException | UnknownHostException e) {
             e.printStackTrace();
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException | ClassNotFoundException e) { // <-- ERROR CORREGIDO AQUÍ
             System.err.println("[Cliente " + idCliente + "] Error: " + e.getMessage());
         } finally {
             if (socket != null && !socket.isClosed()) {
@@ -87,31 +115,50 @@ public class PersonaUDP extends Thread {
         }
     }
 
-    private void registrar(InetAddress direccionServidor) throws IOException {
-        byte[] mensajeRegistro = "REGISTER".getBytes();
+    private void registrar(InetAddress direccionServidor) throws IOException, ClassNotFoundException {
+        
+        // 1. Crear el mensaje de registro
+        Message msgRegistro = new Message(
+            Message.messageType.INICIALIZAR_IDCLIENTE,
+            -1, // ID desconocido, el servidor lo asignará
+            "", // No se necesita mensaje
+            0
+        );
+
+        // 2. Serializar y enviar
+        byte[] mensajeRegistro = serializarMensaje(msgRegistro);
         DatagramPacket paqueteRegistro = new DatagramPacket(mensajeRegistro, mensajeRegistro.length, direccionServidor, puertoServidor);
         socket.send(paqueteRegistro);
 
-        byte[] bufer = new byte[1024];
+        // 3. Esperar y deserializar la respuesta
+        byte[] bufer = new byte[4096];
         DatagramPacket paqueteRespuesta = new DatagramPacket(bufer, bufer.length);
         socket.receive(paqueteRespuesta);
 
-        String respuesta = new String(paqueteRespuesta.getData(), 0, paqueteRespuesta.getLength());
-        // Formato esperado: REGISTRADO;idCliente;idGrupo;V
-        String[] partes = respuesta.split(";");
-        this.idCliente = Integer.parseInt(partes[1]);
-        this.idGrupo = Integer.parseInt(partes[2]);
-        this.V_vecinos = Integer.parseInt(partes[3]);
-        System.out.println("[Cliente " + idCliente + "] Registrado en Grupo " + idGrupo);
+        Message msgRespuesta = deserializarMensaje(paqueteRespuesta.getData(), paqueteRespuesta.getLength());
+
+        // 4. Procesar la respuesta
+        if (msgRespuesta.type == Message.messageType.INICIALIZAR_IDCLIENTE) {
+            this.idCliente = msgRespuesta.idCliente;
+            this.V_vecinos = Integer.parseInt(msgRespuesta.mensaje); // V viene en 'mensaje'
+            this.idGrupo = msgRespuesta.numIteracion; // El Grupo viene en 'numIteracion'
+            System.out.println("[Cliente " + idCliente + "] Registrado en Grupo " + idGrupo);
+        } else {
+            throw new IOException("Error: Respuesta inesperada del servidor durante el registro.");
+        }
     }
     
-    private void esperarSenalInicio() throws IOException {
-        byte[] bufer = new byte[1024];
+    private void esperarSenalInicio() throws IOException, ClassNotFoundException {
+        byte[] bufer = new byte[4096];
         DatagramPacket paqueteRespuesta = new DatagramPacket(bufer, bufer.length);
         socket.receive(paqueteRespuesta); // Espera la señal
-        String respuesta = new String(paqueteRespuesta.getData(), 0, paqueteRespuesta.getLength());
-        if (respuesta.equals("INICIAR_SIMULACION")) {
-             System.out.println("[Cliente " + idCliente + "] Señal de inicio recibida.");
+
+        Message msg = deserializarMensaje(paqueteRespuesta.getData(), paqueteRespuesta.getLength());
+
+        if (msg.type == Message.messageType.INICIAR_SIMULACION) {
+            System.out.println("[Cliente " + idCliente + "] Señal de inicio recibida.");
+        } else {
+            throw new IOException("Señal de inicio inesperada: " + msg.type);
         }
     }
 
@@ -136,28 +183,66 @@ public class PersonaUDP extends Thread {
     private void escucharAlServidor() {
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                byte[] bufer = new byte[1024];
+                byte[] bufer = new byte[4096];
                 DatagramPacket paqueteRecibido = new DatagramPacket(bufer, bufer.length);
                 socket.receive(paqueteRecibido);
 
-                String mensaje = new String(paqueteRecibido.getData(), 0, paqueteRecibido.getLength());
-                String[] partes = mensaje.split(";");
+                // 1. Deserializar CUALQUIER mensaje entrante
+                Message msgRecibido = deserializarMensaje(paqueteRecibido.getData(), paqueteRecibido.getLength());
 
-                if (partes[0].equals("COORDS")) { // Es un mensaje de un vecino
-                    int idRemitenteOriginal = Integer.parseInt(partes[1]);
-                    // Cuando le llega un mensaje a un vecino, este contesta con un ACK
-                    String mensajeAck = "ACK;" + idRemitenteOriginal;
-                    byte[] datosAck = mensajeAck.getBytes();
-                    DatagramPacket paqueteAck = new DatagramPacket(datosAck, datosAck.length, paqueteRecibido.getAddress(), paqueteRecibido.getPort());
-                    socket.send(paqueteAck);
-                } else if (partes[0].equals("ACK_DE")) { // Es un ACK para nosotros
-                    acksRecibidos.add(mensaje);
+                // 2. Actuar según el tipo
+                switch (msgRecibido.type) {
+                    case COMPARTIR_COORDENADAS:
+                        // Es un vecino, contestamos con ACK
+                        Message msgAck = new Message(
+                            Message.messageType.ACK,
+                            this.idCliente, // Yo (el vecino)
+                            String.valueOf(msgRecibido.idCliente), // Para el emisor original
+                            msgRecibido.numIteracion
+                        );
+                        byte[] datosAck = serializarMensaje(msgAck);
+                        DatagramPacket paqueteAck = new DatagramPacket(datosAck, datosAck.length, paqueteRecibido.getAddress(), paqueteRecibido.getPort());
+                        socket.send(paqueteAck);
+                        break;
+
+                    case ACK:
+                        // Es un ACK para nosotros
+                        acksRecibidos.add(msgRecibido);
+                        break;
+
+                    case GROUP_DONE:
+                        // El servidor nos dice que podemos morir
+                        grupoHaTerminado = true;
+                        break; // Salir del bucle y terminar el hilo
+
+                    default:
+                        // Ignorar otros tipos (INICIAR_SIMULACION, etc.)
+                        break;
                 }
+
             } catch (IOException e) {
                 if (socket.isClosed() || Thread.currentThread().isInterrupted()) {
-                    break; // Salir del bucle si el socket se cierra o el hilo se interrumpe
+                    break; // Salir si el socket se cierra o nos interrumpen
                 }
+            } catch (ClassNotFoundException e) {
+                System.err.println("[Cliente " + idCliente + "] Error al deserializar mensaje: " + e.getMessage());
             }
         }
+    }
+    
+    /** Serializa un objeto Message a un array de bytes. */
+    private byte[] serializarMensaje(Message msg) throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        oos.writeObject(msg);
+        oos.flush();
+        return bos.toByteArray();
+    }
+
+    /** Deserializa un array de bytes de vuelta a un objeto Message. */
+    private Message deserializarMensaje(byte[] datos, int longitud) throws IOException, ClassNotFoundException {
+        ByteArrayInputStream bis = new ByteArrayInputStream(datos, 0, longitud);
+        ObjectInputStream ois = new ObjectInputStream(bis);
+        return (Message) ois.readObject();
     }
 }
