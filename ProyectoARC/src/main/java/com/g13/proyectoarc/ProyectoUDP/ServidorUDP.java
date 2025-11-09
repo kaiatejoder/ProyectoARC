@@ -216,6 +216,9 @@ public class ServidorUDP {
         } catch (NumberFormatException e) {
             System.err.println("Error: El mensaje ACK no contenía un ID de cliente válido en el campo 'mensaje'.");
         }
+        else{
+            System.out.println("  -> ERROR: No se encontró el cliente original para el ACK recibido.");
+        }
     }
     
     private static InfoCliente buscarClientePorDireccion(InetAddress direccion, int puerto) {
