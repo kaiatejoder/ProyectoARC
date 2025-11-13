@@ -21,10 +21,10 @@ public class Message {
         COMPARTIR_COORDENADAS, ACK, TIEMPOS_SIMULACION;
     }
     
-    private int idCliente;
-    private String mensaje;
-    private int numIteracion;
-    private messageType type;
+    public int idCliente;
+    public String mensaje;
+    public int numIteracion;
+    public messageType type;
     
     /**
      * 
