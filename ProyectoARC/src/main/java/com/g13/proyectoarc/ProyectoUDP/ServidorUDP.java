@@ -213,11 +213,11 @@ public class ServidorUDP {
                 DatagramPacket paqueteAck = new DatagramPacket(datosAck, datosAck.length, remitenteOriginal.direccion(), remitenteOriginal.puerto());
                 socket.send(paqueteAck);
             }
+            else{
+                System.out.println("  -> ERROR: No se encontró el cliente original para el ACK recibido.");
+            }
         } catch (NumberFormatException e) {
             System.err.println("Error: El mensaje ACK no contenía un ID de cliente válido en el campo 'mensaje'.");
-        }
-        else{
-            System.out.println("  -> ERROR: No se encontró el cliente original para el ACK recibido.");
         }
     }
     
