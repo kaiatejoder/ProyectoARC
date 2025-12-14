@@ -46,7 +46,7 @@ public class Cliente {
         // 3. EJECUCIÓN DE CLIENTES (START)
         for (Persona cliente : listaClientes) {
             cliente.start();
-            try { Thread.sleep(5); } catch (InterruptedException e) {}
+            try { Thread.sleep(20); } catch (InterruptedException e) {}
         }
         
         System.out.println(">>> Clientes iniciados. Esperando finalización...");
