@@ -1,4 +1,3 @@
-package ProyectoHibrido;
 
 import java.io.Serializable; // Importación CRÍTICA: Permite convertir objetos en bytes.
 

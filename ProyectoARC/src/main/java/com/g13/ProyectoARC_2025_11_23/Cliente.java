@@ -1,5 +1,3 @@
-package ProyectoHibrido;
-
 import java.util.ArrayList;
 import java.util.Scanner;
 

@@ -1,4 +1,4 @@
-package ProyectoHibrido;
+
 
 import java.io.*;
 import java.net.*;
@@ -54,7 +54,7 @@ public class Persona extends Thread {
             // Abrimos el socket UDP primero para saber en qué puerto local estamos escuchando.
             // Necesitamos decirle este puerto al servidor durante el registro TCP.
             socketUDP = new DatagramSocket();
-            socketUDP.setSoTimeout(3000000); // Si no llega nada en 30s, lanza excepción (Timeout).
+            //socketUDP.setSoTimeout(300000); // Si no llega nada en 5 minutos, cortamos.
             
             int miPuertoUDP = socketUDP.getLocalPort();
             InetAddress direccionServidor = InetAddress.getByName(ipServidor);
