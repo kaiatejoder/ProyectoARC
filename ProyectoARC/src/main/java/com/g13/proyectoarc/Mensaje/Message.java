@@ -46,6 +46,9 @@ public class Message {
     public String toString() {
         return "Mensaje{" + "idCliente= " + this.idCliente + ", Mensaje= " + this.mensaje + ", numIteracion= " + this.numIteracion + ", tipoMensaje= " + type + '}';
     }
+    public String toCSV() {
+        return "Mensaje{" + "idCliente= " + this.idCliente + ", Mensaje= " + this.mensaje + ", numIteracion= " + this.numIteracion + ", tipoMensaje= " + type + '}';
+    }
     public DataOutputStream serialize(){
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
