@@ -102,5 +102,6 @@ public class Mensaje implements Serializable {
     public String toString() {
         return "Mensaje{" + "idCliente= " + idCliente + ", Mensaje= " + mensaje + ", numIteracion= " + numIteracion + ", tipoMensaje= " + type + '}';
     }
+    public void toCSV(){}
     
 }
