@@ -1,8 +1,18 @@
+package com.g13.ProyectoARC_2025_11_23;
 
-
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -36,6 +46,7 @@ public class Persona extends Thread {
     private double tiempoMedioFinal = 0.0;
     private boolean finalizadoConExito = false;
     private int cantidadTimeouts = 0;
+    private int respuestasCorrectas = 0;
 
     public Persona(String ip, int puerto, int v, int s) {
         this.ipServidor = ip;
@@ -103,6 +114,8 @@ public class Persona extends Thread {
                 long tiempoFin = System.nanoTime(); // Cronómetro OFF
                 long duracion = (tiempoFin - tiempoInicio) / 1_000_000; // Convertir a ms.
                 tiemposDeRespuesta.add(duracion);
+                respuestasCorrectas++;
+
             }
 
             // 6. FASE 3: FINALIZACIÓN Y REPORTE
@@ -276,4 +289,6 @@ public class Persona extends Thread {
     public boolean isFinalizadoConExito() { return finalizadoConExito; }
     public int getCantidadTimeouts() { return cantidadTimeouts; }
     public int getIdCliente() { return idCliente; }
+    public int getIdGrupo() { return idGrupo; }
+    public int getRespuestasCorrectas() { return respuestasCorrectas; }
 }

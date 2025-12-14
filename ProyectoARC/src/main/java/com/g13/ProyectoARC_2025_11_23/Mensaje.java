@@ -1,4 +1,4 @@
-
+package com.g13.ProyectoARC_2025_11_23;
 import java.io.Serializable; // Importación CRÍTICA: Permite convertir objetos en bytes.
 
 /**
@@ -9,6 +9,7 @@ import java.io.Serializable; // Importación CRÍTICA: Permite convertir objetos
  * Imagina que es un sobre de carta: todos (clientes y servidor) deben usar este 
  * mismo sobre para entenderse.
  * * * CONCEPTOS CLAVE:
+ * 
  * 1. Serializable: Implementar esta interfaz es obligatorio para poder enviar
  * una clase compleja (no un simple texto o número) a través de Sockets.
  * Java "congela" (serializa) el objeto en una ristra de ceros y unos, lo envía
@@ -102,6 +103,6 @@ public class Mensaje implements Serializable {
     public String toString() {
         return "Mensaje{" + "idCliente= " + idCliente + ", Mensaje= " + mensaje + ", numIteracion= " + numIteracion + ", tipoMensaje= " + type + '}';
     }
-    public void toCSV(){}
+    
     
 }
