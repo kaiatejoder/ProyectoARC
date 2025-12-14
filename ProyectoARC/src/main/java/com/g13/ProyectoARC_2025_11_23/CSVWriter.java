@@ -14,9 +14,9 @@ public class CSVWriter {
 
     public CSVWriter() {
         crearDirectorio();
-        initFile(LAT_CLIENTES, "NumeroClientes,LatenciaMediaMs");
-        initFile(LAT_GRUPOS, "NumeroGrupos,LatenciaMediaMs");
-        initFile(THROUGHPUT, "NumeroClientes,BitsPorSegundo");
+        initFile(LAT_CLIENTES, "NumeroClientes;LatenciaMediaMs");
+        initFile(LAT_GRUPOS, "NumeroGrupos;LatenciaMediaMs");
+        initFile(THROUGHPUT, "NumeroClientes;BitsPorSegundo");
     }
 
     private void crearDirectorio() {
@@ -40,15 +40,15 @@ public class CSVWriter {
     /* ================== ESCRITURAS ================== */
 
     public synchronized void writeLatenciaPorClientes(int numClientes, double latenciaMediaMs) {
-        writeLine(LAT_CLIENTES, numClientes + "," + latenciaMediaMs);
+        writeLine(LAT_CLIENTES, numClientes + ";" + latenciaMediaMs);
     }
 
     public synchronized void writeLatenciaPorGrupos(int numGrupos, double latenciaMediaMs) {
-        writeLine(LAT_GRUPOS, numGrupos + "," + latenciaMediaMs);
+        writeLine(LAT_GRUPOS, numGrupos + ";" + latenciaMediaMs);
     }
 
     public synchronized void writeThroughput(int numClientes, double bitsPorSegundo) {
-        writeLine(THROUGHPUT, numClientes + "," + bitsPorSegundo);
+        writeLine(THROUGHPUT, numClientes + ";" + bitsPorSegundo);
     }
 
     private void writeLine(String path, String line) {
